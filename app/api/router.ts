@@ -1,12 +1,10 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { desc, eq, sql } from "drizzle-orm";
-import { createHmac } from "node:crypto";
 import { createRouter, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { votes, revealState, voterLocks } from "@db/schema";
 import { TEAMS, TEAM_IDS } from "@contracts/teams";
-import { env } from "./lib/env";
 
 const ADMIN_PIN = process.env.ADMIN_PIN ?? "jam2026";
 
@@ -105,26 +103,12 @@ export const appRouter = createRouter({
             .refine((id) => TEAM_IDS.includes(id), "Equipo inválido"),
         }),
       )
-      .mutation(async ({ input, ctx }) => {
+      .mutation(async ({ input }) => {
         const db = getDb();
-        const clientIp =
-          process.env.IP_BLOCK_ENABLED === "false" ? "" : ctx.clientIp;
-        const ipIdentity = clientIp
-          ? `ip:${clientIp}`
-          : `name:${input.voterName.toLowerCase()}`;
-        const ipHash = createHmac(
-          "sha256",
-          env.appSecret || "local-development-ip-hash-secret",
-        )
-          .update(ipIdentity)
-          .digest("hex");
         try {
           const votesUsed = await db.transaction(async (tx) => {
             try {
-              await tx.insert(voterLocks).values({
-                voterName: input.voterName,
-                ipHash: clientIp ? ipHash : null,
-              });
+              await tx.insert(voterLocks).values({ voterName: input.voterName });
             } catch (err: unknown) {
               if (!isDuplicateError(err)) throw err;
               const [existingVoter] = await tx
@@ -135,26 +119,8 @@ export const appRouter = createRouter({
               if (!existingVoter) {
                 throw new TRPCError({
                   code: "CONFLICT",
-                  message:
-                    "Ya se registraron votos desde esta dirección IP con otro nombre",
+                  message: "No se pudo bloquear el nombre del participante",
                 });
-              }
-              if (clientIp && existingVoter.ipHash === null) {
-                try {
-                  await tx
-                    .update(voterLocks)
-                    .set({ ipHash })
-                    .where(eq(voterLocks.voterName, input.voterName));
-                } catch (updateError: unknown) {
-                  if (isDuplicateError(updateError)) {
-                    throw new TRPCError({
-                      code: "CONFLICT",
-                      message:
-                        "Ya se registraron votos desde esta dirección IP con otro nombre",
-                    });
-                  }
-                  throw updateError;
-                }
               }
             }
 

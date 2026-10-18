@@ -23,9 +23,7 @@ export const votes = mysqlTable(
 // Fila usada para serializar votos simultáneos del mismo participante.
 export const voterLocks = mysqlTable("voter_locks", {
   voterName: varchar("voter_name", { length: 80 }).primaryKey(),
-  // Nullable para poder aplicar el cambio a instalaciones con votos existentes.
-  ipHash: varchar("ip_hash", { length: 64 }),
-}, (t) => [uniqueIndex("voter_ip_unique").on(t.ipHash)]);
+});
 
 // Fila única (id = 1): controla si la pantalla de revelación muestra al ganador
 export const revealState = mysqlTable("reveal_state", {
