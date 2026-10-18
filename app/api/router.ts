@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { desc, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
+import { createHmac } from "node:crypto";
 import { createRouter, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { votes, revealState } from "@db/schema";
+import { votes, revealState, voterLocks } from "@db/schema";
 import { TEAMS, TEAM_IDS } from "@contracts/teams";
+import { env } from "./lib/env";
 
 const ADMIN_PIN = process.env.ADMIN_PIN ?? "jam2026";
 
@@ -103,29 +105,99 @@ export const appRouter = createRouter({
             .refine((id) => TEAM_IDS.includes(id), "Equipo inválido"),
         }),
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const db = getDb();
+        const clientIp =
+          process.env.IP_BLOCK_ENABLED === "false" ? "" : ctx.clientIp;
+        const ipIdentity = clientIp
+          ? `ip:${clientIp}`
+          : `name:${input.voterName.toLowerCase()}`;
+        const ipHash = createHmac(
+          "sha256",
+          env.appSecret || "local-development-ip-hash-secret",
+        )
+          .update(ipIdentity)
+          .digest("hex");
         try {
-          await db.insert(votes).values({
-            voterName: input.voterName,
-            teamId: input.teamId,
+          const votesUsed = await db.transaction(async (tx) => {
+            try {
+              await tx.insert(voterLocks).values({
+                voterName: input.voterName,
+                ipHash: clientIp ? ipHash : null,
+              });
+            } catch (err: unknown) {
+              if (!isDuplicateError(err)) throw err;
+              const [existingVoter] = await tx
+                .select()
+                .from(voterLocks)
+                .where(eq(voterLocks.voterName, input.voterName))
+                .for("update");
+              if (!existingVoter) {
+                throw new TRPCError({
+                  code: "CONFLICT",
+                  message:
+                    "Ya se registraron votos desde esta dirección IP con otro nombre",
+                });
+              }
+              if (clientIp && existingVoter.ipHash === null) {
+                try {
+                  await tx
+                    .update(voterLocks)
+                    .set({ ipHash })
+                    .where(eq(voterLocks.voterName, input.voterName));
+                } catch (updateError: unknown) {
+                  if (isDuplicateError(updateError)) {
+                    throw new TRPCError({
+                      code: "CONFLICT",
+                      message:
+                        "Ya se registraron votos desde esta dirección IP con otro nombre",
+                    });
+                  }
+                  throw updateError;
+                }
+              }
+            }
+
+            // El upsert/insert anterior mantiene bloqueada la fila de este participante.
+            await tx
+              .select({ voterName: voterLocks.voterName })
+              .from(voterLocks)
+              .where(eq(voterLocks.voterName, input.voterName))
+              .for("update");
+
+            const [{ count }] = await tx
+              .select({ count: sql<number>`count(*)` })
+              .from(votes)
+              .where(eq(votes.voterName, input.voterName));
+            if (Number(count) >= 5) {
+              throw new TRPCError({
+                code: "FORBIDDEN",
+                message: "Ya usaste tus 5 votos permitidos",
+              });
+            }
+
+            await tx.insert(votes).values({
+              voterName: input.voterName,
+              teamId: input.teamId,
+            });
+            return Number(count) + 1;
           });
+          return { ok: true as const, votesUsed };
         } catch (err: unknown) {
           if (isDuplicateError(err)) {
             throw new TRPCError({
               code: "CONFLICT",
-              message: "Este nombre ya registró un voto",
+              message: "Ya registraste un voto para ese equipo",
             });
           }
           throw err;
         }
-        return { ok: true as const };
       }),
   }),
 
   reveal: createRouter({
     // La pantalla de revelación consulta esto cada 2s.
-    // Solo expone el ganador cuando el admin activó la revelación.
+    // Solo expone el podio cuando el admin activó la revelación.
     status: publicQuery.query(async () => {
       const revealed = await getRevealed();
       if (!revealed) return { revealed: false as const };
@@ -169,6 +241,7 @@ export const appRouter = createRouter({
       assertAdmin(input.pin);
       const db = getDb();
       await db.delete(votes);
+      await db.delete(voterLocks);
       await setRevealed(false);
       return { ok: true as const };
     }),

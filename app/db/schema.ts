@@ -8,7 +8,7 @@ import {
   int,
 } from "drizzle-orm/mysql-core";
 
-// Un voto por participante (voter_name es único, case-insensitive en MySQL)
+// Cada participante puede votar una vez por equipo (máximo aplicado en la API).
 export const votes = mysqlTable(
   "votes",
   {
@@ -17,8 +17,15 @@ export const votes = mysqlTable(
     teamId: int("team_id").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("voter_name_unique").on(t.voterName)],
+  (t) => [uniqueIndex("voter_team_unique").on(t.voterName, t.teamId)],
 );
+
+// Fila usada para serializar votos simultáneos del mismo participante.
+export const voterLocks = mysqlTable("voter_locks", {
+  voterName: varchar("voter_name", { length: 80 }).primaryKey(),
+  // Nullable para poder aplicar el cambio a instalaciones con votos existentes.
+  ipHash: varchar("ip_hash", { length: 64 }),
+}, (t) => [uniqueIndex("voter_ip_unique").on(t.ipHash)]);
 
 // Fila única (id = 1): controla si la pantalla de revelación muestra al ganador
 export const revealState = mysqlTable("reveal_state", {

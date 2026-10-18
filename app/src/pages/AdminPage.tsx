@@ -201,7 +201,9 @@ export default function AdminPage() {
             <p className="font-arcade-mono text-xs uppercase tracking-[0.25em] text-[var(--paper)]/50">
               Equipos
             </p>
-            <p className="font-pixel mt-3 text-2xl text-[var(--paper)]">13</p>
+            <p className="font-pixel mt-3 text-2xl text-[var(--paper)]">
+              {data?.counts.length ?? "—"}
+            </p>
           </div>
           <div className="col-span-2 border-2 border-[var(--line)] bg-[var(--ink-2)] p-5 sm:col-span-1">
             <p className="font-arcade-mono text-xs uppercase tracking-[0.25em] text-[var(--paper)]/50">

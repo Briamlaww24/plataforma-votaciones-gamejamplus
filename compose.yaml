@@ -25,10 +25,12 @@ services:
       APP_ID: ${APP_ID:-gamejam-votaciones}
       APP_SECRET: ${APP_SECRET:-replace-this-unused-placeholder}
       ADMIN_PIN: ${ADMIN_PIN:-jam2026}
+      IP_BLOCK_ENABLED: ${IP_BLOCK_ENABLED:-true}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
       DATABASE_URL: mysql://${MYSQL_USER:-gamejam}:${MYSQL_PASSWORD:-gamejam_local_change_me}@db:3306/${MYSQL_DATABASE:-gamejam}
-      PORT: 3000
+      PORT: 3015
     ports:
-      - "${PORT:-3000}:3000"
+      - "3015:3015"
     depends_on:
       db:
         condition: service_healthy

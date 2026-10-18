@@ -23,6 +23,7 @@ export const TEAMS: Team[] = [
   { id: 13, name: "Yakuza Pixel", color: "#9AA0A6" },
   { id: 14, name: "Yuraq Michi Interactive", color: "#CA1414" },
   { id: 15, name: "Hámster", color: "#026f46" },
+  { id: 16, name: "Cult of Three", color: "#6B2B06" },
 ];
 
 export const TEAM_IDS = TEAMS.map((t) => t.id);

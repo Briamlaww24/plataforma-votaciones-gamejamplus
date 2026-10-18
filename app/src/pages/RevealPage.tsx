@@ -93,8 +93,8 @@ export default function RevealPage() {
         )}
 
         {phase === "winner" && podium.length > 0 && (
-          <div className="anim-pop w-full max-w-5xl text-center">
-            <StarIcon className="anim-spin-slow mx-auto mb-6 h-16 w-16 text-[var(--lime)]" />
+          <div className="anim-pop w-full max-w-3xl text-center">
+            <StarIcon className="anim-spin-slow mx-auto mb-4 h-12 w-12 text-[var(--lime)]" />
             <p className="font-arcade-mono mb-4 text-sm uppercase tracking-[0.4em] text-[var(--paper)]/60">
               Podio oficial
             </p>
@@ -105,9 +105,9 @@ export default function RevealPage() {
                 return (
                   <section
                     key={place.place}
-                    className={`anim-pop border-2 bg-[var(--ink-2)] p-5 sm:p-6 ${
+                    className={`anim-pop flex h-56 flex-col border-2 bg-[var(--ink-2)] p-4 sm:p-5 ${
                       firstPlace
-                        ? "sm:order-2 sm:py-10"
+                        ? "sm:order-2"
                         : place.place === 2
                           ? "sm:order-1"
                           : "sm:order-3"
@@ -127,11 +127,16 @@ export default function RevealPage() {
                           ? "2.º lugar"
                           : "3.er lugar"}
                     </p>
-                    <div className="space-y-4">
+                    {place.teams.length > 2 && (
+                      <p className="font-arcade-mono mb-2 text-[9px] uppercase tracking-wider text-[var(--paper)]/40">
+                        Desliza para ver todos
+                      </p>
+                    )}
+                    <div className="min-h-0 max-h-28 flex-1 space-y-3 overflow-y-auto overscroll-contain pr-1">
                       {place.teams.map((team) => (
                         <div key={team.id}>
                           <h1
-                            className="font-pixel text-base leading-relaxed sm:text-lg"
+                            className="font-pixel text-sm leading-relaxed sm:text-base"
                             style={{
                               color: team.color,
                               textShadow: `0 0 24px ${team.color}66`,
@@ -139,7 +144,7 @@ export default function RevealPage() {
                           >
                             {team.name}
                           </h1>
-                          <p className="font-arcade-mono mt-3 text-sm text-[var(--paper)]/70">
+                          <p className="font-arcade-mono mt-2 text-xs text-[var(--paper)]/70">
                             {team.votes} {team.votes === 1 ? "voto" : "votos"}
                           </p>
                         </div>
