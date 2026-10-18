@@ -1,0 +1,37 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-gamejam}
+      MYSQL_USER: ${MYSQL_USER:-gamejam}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-gamejam_local_change_me}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_local_change_me}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "--password=$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  app:
+    build:
+      context: ./app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      APP_ID: ${APP_ID:-gamejam-votaciones}
+      APP_SECRET: ${APP_SECRET:-replace-this-unused-placeholder}
+      ADMIN_PIN: ${ADMIN_PIN:-jam2026}
+      DATABASE_URL: mysql://${MYSQL_USER:-gamejam}:${MYSQL_PASSWORD:-gamejam_local_change_me}@db:3306/${MYSQL_DATABASE:-gamejam}
+      PORT: 3000
+    ports:
+      - "${PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
