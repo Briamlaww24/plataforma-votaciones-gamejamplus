@@ -216,6 +216,56 @@ export default function AdminPage() {
           </div>
         </section>
 
+        {/* Podio calculado por el backend, incluyendo empates */}
+        <section className="mb-10">
+          <h2 className="font-arcade-mono mb-4 text-xs uppercase tracking-[0.3em] text-[var(--paper)]/60">
+            Podio actual
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[1, 2, 3].map((place) => {
+              const entry = data?.podium.find((rank) => rank.place === place);
+              return (
+                <article
+                  key={place}
+                  className="border-2 border-[var(--line)] bg-[var(--ink-2)] p-4"
+                  style={{
+                    borderColor: place === 1 ? "var(--lime)" : undefined,
+                  }}
+                >
+                  <p className="font-arcade-mono mb-3 text-[10px] uppercase tracking-[0.2em] text-[var(--paper)]/50">
+                    {place === 1
+                      ? "1.er lugar"
+                      : place === 2
+                        ? "2.º lugar"
+                        : "3.er lugar"}
+                  </p>
+                  {entry ? (
+                    <div className="space-y-2">
+                      {entry.teams.map((team) => (
+                        <div key={team.id}>
+                          <p
+                            className="font-pixel text-[10px] leading-relaxed"
+                            style={{ color: team.color }}
+                          >
+                            {team.name}
+                          </p>
+                          <p className="font-arcade-mono mt-1 text-xs text-[var(--paper)]/60">
+                            {team.votes} {team.votes === 1 ? "voto" : "votos"}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="font-arcade-mono text-xs text-[var(--paper)]/35">
+                      —
+                    </p>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
         {/* Barras de resultados */}
         <section className="mb-10">
           <h2 className="font-arcade-mono mb-4 text-xs uppercase tracking-[0.3em] text-[var(--paper)]/60">

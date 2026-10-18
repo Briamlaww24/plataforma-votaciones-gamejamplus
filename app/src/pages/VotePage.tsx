@@ -71,7 +71,7 @@ export default function VotePage() {
       <div className="relative z-10 mx-auto w-full max-w-4xl flex-1 px-5 py-10 sm:py-14">
         <header className="anim-pop-soft mb-10 text-center">
           <p className="font-arcade-mono mb-4 text-xs uppercase tracking-[0.35em] text-[var(--coral)]">
-            14 equipos · 1 ganador
+            15 equipos · 1 ganador
           </p>
           <h1 className="font-pixel text-2xl leading-relaxed text-[var(--paper)] sm:text-4xl sm:leading-relaxed">
             VOTA<span className="text-[var(--electric)]">_</span>AHORA

@@ -37,7 +37,22 @@ async function getCounts() {
   const total = counts.reduce((acc, c) => acc + c.votes, 0);
   const max = Math.max(0, ...counts.map((c) => c.votes));
   const winners = max > 0 ? counts.filter((c) => c.votes === max) : [];
-  return { counts, total, winners };
+  const ranked = counts
+    .filter((team) => team.votes > 0)
+    .sort((a, b) => b.votes - a.votes);
+  let previousVotes: number | undefined;
+  let place = 0;
+  const podiumTeams = ranked.flatMap((team, index) => {
+    if (team.votes !== previousVotes) place = index + 1;
+    previousVotes = team.votes;
+    return place <= 3 ? [{ ...team, place }] : [];
+  });
+  const podium = Array.from(new Set(podiumTeams.map((team) => team.place)),
+    (place) => ({
+      place,
+      teams: podiumTeams.filter((team) => team.place === place),
+    }));
+  return { counts, total, winners, podium };
 }
 
 async function getRevealed(): Promise<boolean> {
@@ -114,8 +129,8 @@ export const appRouter = createRouter({
     status: publicQuery.query(async () => {
       const revealed = await getRevealed();
       if (!revealed) return { revealed: false as const };
-      const { winners, total } = await getCounts();
-      return { revealed: true as const, winners, total };
+      const { podium, total } = await getCounts();
+      return { revealed: true as const, podium, total };
     }),
   }),
 
@@ -128,14 +143,14 @@ export const appRouter = createRouter({
     results: publicQuery.input(pinInput).query(async ({ input }) => {
       assertAdmin(input.pin);
       const db = getDb();
-      const { counts, total, winners } = await getCounts();
+      const { counts, total, winners, podium } = await getCounts();
       const revealed = await getRevealed();
       const recent = await db
         .select()
         .from(votes)
         .orderBy(desc(votes.createdAt))
         .limit(12);
-      return { counts, total, winners, revealed, recent };
+      return { counts, total, winners, podium, revealed, recent };
     }),
 
     reveal: publicQuery.input(pinInput).mutation(async ({ input }) => {

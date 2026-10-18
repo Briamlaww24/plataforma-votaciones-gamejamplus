@@ -16,7 +16,7 @@ export default function RevealPage() {
 
   const data = status.data;
   const revealed = data?.revealed === true;
-  const winners = revealed ? data.winners : [];
+  const podium = revealed ? data.podium : [];
   const total = revealed ? data.total : 0;
 
   // Arranca la secuencia cuando el admin pulsa "Mostrar resultados"
@@ -92,33 +92,68 @@ export default function RevealPage() {
           </div>
         )}
 
-        {phase === "winner" && winners.length > 0 && (
-          <div className="anim-pop w-full max-w-3xl text-center">
+        {phase === "winner" && podium.length > 0 && (
+          <div className="anim-pop w-full max-w-5xl text-center">
             <StarIcon className="anim-spin-slow mx-auto mb-6 h-16 w-16 text-[var(--lime)]" />
             <p className="font-arcade-mono mb-4 text-sm uppercase tracking-[0.4em] text-[var(--paper)]/60">
-              {winners.length > 1 ? "¡Empate!" : "El ganador es"}
+              Podio oficial
             </p>
-            <div className="space-y-5">
-              {winners.map((w, i) => (
-                <h1
-                  key={w.id}
-                  className="anim-pop font-pixel text-3xl leading-relaxed sm:text-5xl sm:leading-relaxed"
-                  style={{
-                    color: w.color,
-                    animationDelay: `${150 + i * 200}ms`,
-                    textShadow: `0 0 32px ${w.color}66`,
-                  }}
-                >
-                  {w.name}
-                </h1>
-              ))}
+            <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-3">
+              {podium.map((place) => {
+                const firstPlace = place.place === 1;
+                const accent = firstPlace ? "var(--lime)" : "var(--paper)";
+                return (
+                  <section
+                    key={place.place}
+                    className={`anim-pop border-2 bg-[var(--ink-2)] p-5 sm:p-6 ${
+                      firstPlace
+                        ? "sm:order-2 sm:py-10"
+                        : place.place === 2
+                          ? "sm:order-1"
+                          : "sm:order-3"
+                    }`}
+                    style={{
+                      borderColor: accent,
+                      animationDelay: `${150 + (place.place - 1) * 220}ms`,
+                    }}
+                  >
+                    <p
+                      className="font-arcade-mono mb-4 text-xs uppercase tracking-[0.25em]"
+                      style={{ color: accent }}
+                    >
+                      {place.place === 1
+                        ? "1.er lugar"
+                        : place.place === 2
+                          ? "2.º lugar"
+                          : "3.er lugar"}
+                    </p>
+                    <div className="space-y-4">
+                      {place.teams.map((team) => (
+                        <div key={team.id}>
+                          <h1
+                            className="font-pixel text-base leading-relaxed sm:text-lg"
+                            style={{
+                              color: team.color,
+                              textShadow: `0 0 24px ${team.color}66`,
+                            }}
+                          >
+                            {team.name}
+                          </h1>
+                          <p className="font-arcade-mono mt-3 text-sm text-[var(--paper)]/70">
+                            {team.votes} {team.votes === 1 ? "voto" : "votos"}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
             </div>
             <p
               className="anim-pop-soft font-arcade-mono mt-8 text-base text-[var(--paper)]/70"
               style={{ animationDelay: "450ms" }}
             >
-              {winners[0].votes} {winners[0].votes === 1 ? "voto" : "votos"} de {total}{" "}
-              emitidos
+              {total} {total === 1 ? "voto emitido" : "votos emitidos"}
             </p>
             <div
               className="anim-pop-soft pixel-shadow-lime mx-auto mt-10 inline-block border-2 border-[var(--lime)] bg-[var(--lime)] px-8 py-4"
@@ -131,7 +166,7 @@ export default function RevealPage() {
           </div>
         )}
 
-        {phase === "winner" && winners.length === 0 && (
+        {phase === "winner" && podium.length === 0 && (
           <div className="anim-pop text-center">
             <h1 className="font-pixel text-xl leading-relaxed text-[var(--paper)] sm:text-2xl">
               SIN VOTOS
