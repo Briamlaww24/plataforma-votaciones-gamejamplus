@@ -1,16 +1,16 @@
-# Game Jam — Plataforma de Votaciones
+# Game Jam -- Plataforma de Votaciones
 
-Plataforma full-stack de votación para un game jam con 16 equipos.
+Plataforma full-stack de votación para la game jam plus de 2026.
 
 ## Rutas
 
-| Ruta | Descripción |
-|------|-------------|
-| `/` | Votación pública: cada participante puede votar por hasta 5 equipos distintos usando su nombre |
-| `/revelacion` | Pantalla grande: espera → animación de conteo → podio con confeti. Se activa desde el panel admin |
-| `/admin` | Panel de administración (PIN): resultados en vivo, botón "Mostrar resultados", ocultar, reiniciar votación |
+| Ruta            | Descripción                                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------------------------------- |
+| `/`           | Votación pública: Cada participante puede votar por hasta 5 equipos distintos usando su nombre              |
+| `/revelacion` | Pantalla grande: Espera -> Animación de conteo y podio con confeti. Se activa desde el panel admin          |
+| `/admin`      | Panel de administración (PIN): Resultados en vivo, botón "Mostrar resultados", ocultar, reiniciar votación |
 
-**PIN de administrador por defecto:** `jam2026` — cámbialo con la variable de entorno `ADMIN_PIN`.
+**PIN de administrador por defecto:** `jam2026` -- Se puede cambiar con la variable de entorno del  `ADMIN_PIN` del .env.
 
 ## Editar los equipos
 
@@ -38,16 +38,15 @@ npm start         # sirve todo en el puerto 3015 (variable PORT configurable)
 O con Docker:
 
 ```bash
-docker build -t gamejam-votaciones .
-docker run -p 3015:3015 --env-file .env gamejam-votaciones
+docker compose up -d --build
 ```
 
 Variables de entorno necesarias en producción: `DATABASE_URL` (MySQL) y opcionalmente `ADMIN_PIN` y `PORT`.
 
-La API aplica el límite de votos por nombre de participante. El nombre no se vincula a una dirección IP; por ello, cambiar de nombre permite crear otra identidad.
+La API aplica el límite de votos por nombre de participante. El nombre no se vincula a una dirección IP por ello, cambiar de nombre permite crear otra identidad.
 
 ## Base de datos
 
-- `votes`: un voto por participante y equipo (`voter_name` + `team_id` únicos), con un máximo de 5 votos distintos por nombre aplicado por el backend.
-- `voter_locks`: serializa votos simultáneos y limita a cinco votos por nombre. En bases existentes, `npm run db:push` elimina la columna `ip_hash` obsoleta.
-- `reveal_state`: fila única que controla si la pantalla de revelación muestra al ganador.
+- `votes`: Un voto por participante y equipo (`voter_name` + `team_id` únicos), con un máximo de 5 votos distintos por nombre aplicado por el backend.
+- `voter_locks`: Serializa votos simultáneos y limita a cinco votos por nombre. En bases existentes, `npm run db:push` elimina la columna `ip_hash` obsoleta.
+- `reveal_state`: Fila única que controla si la pantalla de revelación muestra al ganador.
